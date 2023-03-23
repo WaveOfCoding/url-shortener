@@ -1,5 +1,7 @@
-from flask import Flask
+from flask import Flask, request, redirect, url_for, render_template
 from flask_sqlalchemy import SQLAlchemy
+import random
+import string
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///url.db'
@@ -22,9 +24,34 @@ class Urls(db.Model):
         self.long = long
         self.short = short
 
-@app.route('/')
-def hello_world():
-    return "Hello World"
+
+def shorten_url():
+    letters = string.ascii_lowercase + string.ascii_uppercase
+    while True:
+        rand_letters = random.choices(letters, k=3)
+        rand_letters = "".join(rand_letters)
+        short_url = Urls.query.filter_by(short=rand_letters).first()
+        if not short_url:
+            return rand_letters
+
+
+@app.route('/', methods=['POST', 'GET'])
+def home():
+    if request.method == "POST":
+        url_received = request.form["nm"]
+        found_url = Urls.query.filter_by(long=url_received).first()
+
+        if found_url:
+            return redirect(url_for("display_short_url", url=found_url.short))
+        else:
+            short_url = shorten_url()
+            print(short_url)
+            new_url = Urls(url_received, short_url)
+            db.session.add(new_url)
+            db.session.commit()
+            return redirect(url_for("display_short_url", url=short_url))
+    else:
+        return render_template('url_page.html')
 
 
 if __name__ == '__main__':
