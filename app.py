@@ -54,5 +54,24 @@ def home():
         return render_template('url_page.html')
 
 
+@app.route('/<short_url>')
+def redirection(short_url):
+    long_url = Urls.query.filter_by(short=short_url).first()
+    if long_url:
+        return redirect(long_url.long)
+    else:
+        return f'<h1>Url doesnt exist</h1>'
+
+
+@app.route('/display/<url>')
+def display_short_url(url):
+    return render_template('shorturl.html', short_url_display=url)
+
+
+@app.route('/all_urls')
+def display_all():
+    return render_template('all_urls.html', vals=Urls.query.all())
+
+
 if __name__ == '__main__':
     app.run(port=8000, debug=True)
